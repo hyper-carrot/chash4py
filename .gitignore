@@ -1,0 +1,4 @@
+build/
+chash4py.egg-info/
+dist/
+*.pyc
