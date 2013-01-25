@@ -17,7 +17,7 @@ class Test(unittest.TestCase):
 
     __functional_test = True
 
-    __performance_test = True
+    __benchmark_test = True
 
     def setUp(self):
         pass
@@ -117,9 +117,10 @@ class Test(unittest.TestCase):
         self.assertIsNone(t4)
         ring.destroy()
 
-    def testHashRingPerf(self):
-        if not self.__performance_test:
-            print "The performance test 'testHashRingPerf' is ignored."
+    def testHashRingForBenchmark(self):
+        debugTag = False
+        if not self.__benchmark_test:
+            print "The benchmark test 'testHashRingPerf' is ignored."
             return
         hosts = ("10.11.156.71:2181", "10.11.5.145:2181", "10.11.5.164:2181", "192.168.106.63:2181", "192.168.106.64:2181")
         print "All hosts: {0}".format(hosts)
@@ -127,26 +128,29 @@ class Test(unittest.TestCase):
         ring = chash.HashRing(check_func=None)
         print "Add targets ({0})...".format(hosts)
         ring.add_targets(hosts)
+
         sample_str_az = "abcdefghijklmnopqrstuvwxyz"
         sample_str = sample_str_az + sample_str_az.upper() + " ~!@#$%^&*()_+-="
-        target_count_dict = collections.OrderedDict({h:0 for h in hosts})
-        total = 10000
-        starttime = datetime.datetime.now()
-        for i in range(0, total):
-            key = string.join(random.sample(sample_str, 5)).replace(" ","")
-            t = ring.get_target(key)
-            #print "The target of key '{0}' is '{1}'. ({2})".format(key, t, i)
-            self.assertIsNotNone(t)
-            target_count_dict[t] += 1
-        endtime = datetime.datetime.now()
-        difftime = (endtime - starttime)
-        unit = "second"
-        diff = (endtime - starttime).seconds
-        if diff < 1:
-            unit = "ms"
-            diff = difftime.microseconds / float(1000)
-        print "Total: {0}, Cost(unit={1}): {2}, Per Unit: {3}".format(total, unit, diff, (total / diff))
-        print "The target count dict: {0}".format(target_count_dict)
+        loopNumbers = [10000, 20000, 50000, 100000, 200000, 300000, 400000, 500000]
+        for loopNumber in loopNumbers:
+            target_count_dict = collections.OrderedDict({h:0 for h in hosts})
+            keys = list()
+            for i in range(0, loopNumber):
+                keys.append(string.join(random.sample(sample_str, 10)).replace(" ", ""))
+            starttime = datetime.datetime.now()
+            for i in range(0, loopNumber):
+                key = keys[i]
+                t = ring.get_target(key)
+                if debugTag:
+                    print "The target of key '{0}' is '{1}'. ({2})".format(key, t, i)
+                self.assertIsNotNone(t)
+                target_count_dict[t] += 1
+            endtime = datetime.datetime.now()
+            difftime = (endtime - starttime)
+            totalCost = difftime.seconds * 1000 * 1000 + difftime.microseconds
+            eachCost = totalCost / float(loopNumber)
+            print "Benchmark Result (loopNumber={0}) - Total cost (microsecond): {1}, Count: {2}, Each cost (microsecond): {3}.".format(loopNumber, totalCost, loopNumber, eachCost)
+            print "The target count dict (loopNumber={0}): {1}".format(loopNumber, target_count_dict)
         ring.destroy()
 
 if __name__ == "__main__":
