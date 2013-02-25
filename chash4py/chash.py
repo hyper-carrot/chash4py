@@ -6,7 +6,6 @@ Created on 2013-01-10
 import hashlib
 from itertools import *
 import threading
-import collections
 import bisect
 from chash4py.timer import RepeatTimer
 from chash4py.ilogging import get_logger
