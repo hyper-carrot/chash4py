@@ -316,14 +316,31 @@ class HashRing:
             self.__remove_target(target)
 
     def get_target(self, value):
-        if not value:
+        results = self.get_targets(value, 1)
+        if len(results) == 0:
             return None
+        else:
+            return results[0]
+
+    def get_targets(self, value, number):
+        results = []
+        if not value:
+            return results
+        if number <= 0:
+            number = 1
         self.__change_event.wait()
+        target_number = len(self.__target_nodes_dict)
+        if number > target_number:
+            number = target_number
         h = get_hash_for_key(str(value))
-        node = self.__node_target_dict.to_node(h)
-        target = None
-        if node in self.__node_target_dict:
-            target = self.__node_target_dict[node]
-        get_logger().debug("The target of key '{0}' ({1}) is '{2}' ({3}).".format(value, h, target, node))
-        return target
+        currentHash = h
+        while len(results) < number:
+            node = self.__node_target_dict.to_node(currentHash)
+            if node in self.__node_target_dict:
+                target = self.__node_target_dict[node]
+                if target not in results:
+                    results.append(target)
+            currentHash = node + 1
+        get_logger().debug("The targets of key '{0}' ({1}) is {2}.".format(value, h, results))
+        return results
 
